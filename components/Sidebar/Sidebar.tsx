@@ -90,7 +90,7 @@ const Sidebar = <T,>({
               {folderComponent}
             </div>
           )}
-
+          
           {items?.length > 0 ? (
             <div
               className="pt-2"

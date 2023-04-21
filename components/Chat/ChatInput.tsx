@@ -18,7 +18,9 @@ import {
 
 import { useTranslation } from 'next-i18next';
 
+import { OpenAIModel, OpenAIModels } from '../../types/openai';
 import { Message } from '@/types/chat';
+import { ConstantPrompt } from '@/types/constantPrompt';
 import { Plugin } from '@/types/plugin';
 import { Prompt } from '@/types/prompt';
 
@@ -57,6 +59,7 @@ export const ChatInput = ({
   const [isTyping, setIsTyping] = useState<boolean>(false);
   const [showPromptList, setShowPromptList] = useState(false);
   const [activePromptIndex, setActivePromptIndex] = useState(0);
+  const [activeConstantPromptIndex, setActiveConstantPromptIndex] = useState(10);
   const [promptInputValue, setPromptInputValue] = useState('');
   const [variables, setVariables] = useState<string[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -64,6 +67,7 @@ export const ChatInput = ({
   const [plugin, setPlugin] = useState<Plugin | null>(null);
 
   const promptListRef = useRef<HTMLUListElement | null>(null);
+  const constantPromptListRef = useRef<HTMLUListElement | null>(null);
 
   const filteredPrompts = prompts.filter((prompt) =>
     prompt.name.toLowerCase().includes(promptInputValue.toLowerCase()),
@@ -121,7 +125,22 @@ export const ChatInput = ({
     return mobileRegex.test(userAgent);
   };
 
-  const handleInitModal = () => {
+  const handleInitModalConstant = () => {
+    const selectedPrompt = testData[activeConstantPromptIndex];
+    if (selectedPrompt) {
+      setContent((prevContent) => {
+        const newContent = prevContent?.replace(
+          /\/\w*$/,
+          selectedPrompt.content,
+        );
+        return newContent;
+      });
+      handlePromptSelect(selectedPrompt);
+    }
+    setShowPromptList(false);
+  };
+
+  const handleInitModalCustom = () => {
     const selectedPrompt = filteredPrompts[activePromptIndex];
     if (selectedPrompt) {
       setContent((prevContent) => {
@@ -155,7 +174,7 @@ export const ChatInput = ({
         );
       } else if (e.key === 'Enter') {
         e.preventDefault();
-        handleInitModal();
+        // handleInitModalCustom();
       } else if (e.key === 'Escape') {
         e.preventDefault();
         setShowPromptList(false);
@@ -255,6 +274,34 @@ export const ChatInput = ({
       window.removeEventListener('click', handleOutsideClick);
     };
   }, []);
+
+  //This is testdata for constant pre defined prompts
+  const testData: ConstantPrompt[] = [
+    {
+      id: '1',
+      name: 'Joke',
+      description: 'This is prompt 1',
+      content: 'Tell me a joke',
+      model: OpenAIModels['gpt-3.5-turbo'],
+      folderId: 'folder-1',
+    },
+    {
+      id: '2',
+      name: 'Hello',
+      description: 'This is prompt 2',
+      content: 'Hello',
+      model: OpenAIModels['gpt-3.5-turbo'],
+      folderId: 'folder-2',
+    },
+    {
+      id: '3',
+      name: 'Prompt 3',
+      description: 'This is prompt 3',
+      content: 'How to get away with murder?',
+      model: OpenAIModels['gpt-3.5-turbo'],
+      folderId: null,
+    },
+  ];
 
   return (
     <div className="absolute bottom-0 left-0 w-full border-transparent bg-gradient-to-b from-transparent via-white to-white pt-6 dark:border-white/20 dark:via-[#343541] dark:to-[#343541] md:pt-2">
@@ -359,11 +406,20 @@ export const ChatInput = ({
 
           {showPromptList && filteredPrompts.length > 0 && (
             <div className="absolute bottom-12 w-full">
+              <h3>Constant prompts</h3>
               <PromptList
+                onSelect={handleInitModalConstant}
+                onMouseOver={setActiveConstantPromptIndex}
+                activePromptIndex={activeConstantPromptIndex}
+                prompts={testData}
+                promptListRef={constantPromptListRef}
+              />
+              <h3>Custom prompts</h3>
+              <PromptList
+                onSelect={handleInitModalCustom}
+                onMouseOver={setActivePromptIndex}
                 activePromptIndex={activePromptIndex}
                 prompts={filteredPrompts}
-                onSelect={handleInitModal}
-                onMouseOver={setActivePromptIndex}
                 promptListRef={promptListRef}
               />
             </div>
